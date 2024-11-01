@@ -1,0 +1,217 @@
+* {
+    font-family: "lato", sans-serif;
+    font-weight: bold;
+}
+
+body {
+    background: rgb(173, 213, 239);
+    color: #085a83;
+    display: flex;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    flex-direction: column;
+    justify-content: center;
+}
+
+h2 {
+    font-size: 44px; /* Adjust size for headings */
+    font-weight: bold;
+    font-family: 'Pacifico', cursive;
+    text-decoration: underline;
+}
+
+h3 {
+    font-size: 32px; /* Adjust size for headings */
+    font-family: 'Pacifico', cursive;
+    font-weight: 200;
+    text-decoration: underline;
+}
+
+form {
+    display: flex;
+    width: 100%;
+    margin-right: 20px;
+    font-weight: 200;
+    align-items: center;
+}
+
+input[type="checkbox"] {
+    margin-right: 10px;
+    font-weight: 200;
+}
+
+input[type='color'] {
+    margin-right: 20px;
+    height: 40px;
+    width: 40px;
+    display: flex; 
+    align-items: center;
+}
+
+input[type="text"] {
+    padding: 15px; /* Slightly higher input field */
+    flex-grow: 1; /* Fills available space */
+    font-size: 24px; /* Increase text size */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box; /* Ensure consistent sizing */
+    margin-right: 20px;
+}
+
+.container {
+    width: 800px;
+    margin: 0 auto;
+}
+
+button {
+    padding: 15px 20px;
+    background: linear-gradient(to right, #3498db, #2980b9); /* Gradient background */
+    color: white;
+    border: none;
+    border-radius: 50px; /* Pill-shaped button */
+    cursor: pointer;
+    font-size: 24px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Add shadow */
+    transition: background 0.3s ease;
+    margin-left: 20px;
+}
+
+button:hover {
+    background: linear-gradient(to right, #1b8ad3, #106faf);;  /* Darker red on hover */
+}
+
+.remove-btn {
+    background: red;        /* Red background */
+    color: white;           /* White text color */
+    border: none;           /* Remove border */
+    border-radius: 5px;     /* Box-shaped with small border radius */
+    cursor: pointer;
+    font-size: 20px;        /* Larger, bold text size */
+    font-weight: bold;      /* Bold text */
+    padding: 0px 5px;       /* Further reduced padding */
+    margin-left: 10px;      /* Margin between task text and button */
+    box-shadow: none;       /* No shadow */
+    line-height: 1;         /* Tight line height */
+    transition: background 0.3s ease, color 0.3s ease; /* Smooth transition */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;           /* More compact height */
+    width: 20px;            /* More compact width */
+    text-align: center;
+    padding: 0;
+}
+
+.remove-btn:hover {
+    background: darkred;  /* Darker red on hover */
+    animation: spin 1s linear infinite;
+}
+
+/* Keyframes for the spin animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Styles for the select element */
+select {
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+select:focus {
+    border-color: #007bff;
+    outline: none;
+    font-weight: 200;
+}
+
+li {
+    font-size: 24px;
+    font-weight: 200;
+    color: white;
+    padding: 5px 10px; /* Adjust padding for smaller size */
+    border-radius: 4px
+}
+
+ul {
+    list-style-type: none; /* Removes the list dots */
+    margin: 0;
+    padding: 0;
+    font-weight: 200;
+}
+
+/* Navigation bar styling */
+nav{
+    background-color: white;
+    padding: 10px 0; /* Add some padding for spacing */
+    border-bottom: 1px solid #ccc; /* Optional: Add a bottom border for separation */
+    width: 100%; /* Make the nav take the full width */
+    box-sizing: border-box;
+}
+
+.nav {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex; /* Make the list horizontal */
+}
+
+.nav li {
+    margin: 0 15px; /* Add space between items */
+    position: relative; /* Position relative for the delimiter */
+}
+
+.nav a {
+    text-decoration: none;
+    color: #007bff; /* Link color */
+    font-size: 24px; /* Adjust font size */
+    font-weight: bold;
+}
+
+.nav a:hover {
+    color: #0056b3; /* Link hover color */
+}
+
+.nav .active a {
+    color: #0056b3; /* Active link color */
+    font-weight: bold; /* Make the active link bold */
+    border-bottom: 2px solid #0056b3; /* Optional: Add a bottom border to indicate active state */
+}
+
+.nav li:not(:last-child)::after {
+    content: ""; /* Empty content for the delimiter */
+    position: absolute;
+    right: -15px; /* Position the delimiter */
+    top: 50%;
+    transform: translateY(-50%);
+    height: 20px; /* Height of the delimiter */
+    border-left: 2.5px solid #007bff; /* Style of the delimiter */
+}
+
+footer{
+    text-align: left;
+    position: fixed;
+    bottom: 0;
+    left:0;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    width: calc(100% - 25px);
+    border-top: 1.5px solid #033366; /* Add a top border */
+    color: #033366;
+}
+
+p{
+    font-size: 24px;
+}
+
+button.reset{
+    margin-top: 30px;
+    margin-left: 0px;
+}
