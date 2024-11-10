@@ -1,0 +1,92 @@
+<html lang="en">
+<%- include('./partials/head'); %>
+    
+<body>
+
+    <%- include('./partials/nav'); %>
+
+    <div class="container">
+
+        <h2>Vlad's Vibrant Version of a To-Do List</h2>
+
+        <form action="/addtask" method="POST">
+            <select name="category" required>
+                <% categories.forEach(category => { %>
+                    <option value="<%= category.name %>"><%= category.name %></option>
+                <% }) %>
+            </select>
+            <input type="text" name="task" placeholder="Add new task" required>
+            <button type="submit">Add Task</button>
+        </form>
+
+        <h3>Outstanding Tasks</h3>
+        <ul>
+            <% if (todos.length > 0) { %>
+                <% todos.forEach(todo => { %>
+                    <% const category = categories.find(cat => cat.name === todo.category); %>
+                    <li style="background-color: <%= category ? category.color : '#fff' ; %>">
+                        <form action="/ticktask" method="POST" style="display: inline;">
+                            <input type="checkbox" name="check" value="<%= todo.task %>_<%= todo.category %>" onclick="this.form.submit()"> <%= todo.task %> (<%= todo.category %>)
+                        </form>
+                    </li>
+                <% }) %>
+            <% } else { %>
+                <li style = "color:#085a83;">No tasks yet</li>
+            <% } %>
+        </ul>
+
+        <h3>Completed Tasks</h3>
+        <ul>
+            <% if (ticks.length > 0){ %>
+                <% ticks.forEach(ticked => { %>
+                    <% const category = categories.find(cat => cat.name === ticked.category); %>
+                    <li style="background-color: <%= category ? category.color : '#fff' ; %>">
+                        <%= ticked.task %>
+                        <form action="/removetask" method="POST" style="display: inline;">
+                            <input type="hidden" name="tasktoRemove" value="<%= ticked.task %>_<%= ticked.category %>"> (<%= ticked.category %>)
+                            <button type="submit" class="remove-btn">X</button>
+                        </form>
+                    </li>
+            <% }) %>
+        <% } else { %>
+            <li style = "color:#085a83;">No ticked tasks</li>
+        <% } %>
+        </ul>
+
+    </div>
+    
+    <%- include('./partials/footer'); %>
+    <script>
+        async function fetchTasks() {
+            try {
+                const outstandingResponse = await fetch('/api/outstanding-tasks');
+                const outstandingTasks = await outstandingResponse.json();
+                const completedResponse = await fetch('/api/completed-tasks');
+                const completedTasks = await completedResponse.json();
+    
+                const outstandingTasksList = document.getElementById('outstanding-tasks');
+                const completedTasksList = document.getElementById('completed-tasks');
+    
+                outstandingTasksList.innerHTML = '';
+                completedTasksList.innerHTML = '';
+    
+                outstandingTasks.forEach(task => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${task.task} (${task.category})`;
+                    outstandingTasksList.appendChild(li);
+                });
+    
+                completedTasks.forEach(task => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${task.task} (${task.category})`;
+                    completedTasksList.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+            }
+        }
+    
+        document.addEventListener('DOMContentLoaded', fetchTasks);
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # To-Do List Application
 
-This is a JavaScript project for creating a to-do list application.
+This is a JavaScript project for a to-do list application. Yay!
 
 ## Description
 
@@ -69,5 +69,15 @@ The application runs at `localhost:4444/to-do-list`.
 
     Open your browser and navigate to `http://localhost:4444`.
 
-### Credentials and Ackwoledgements
+## Applications and Extensions
+
+### Chrome Extension
+
+A Chrome extension has bee developed to work with this to do list application. The extension displays the task in different tabs while the application is running. It allows the user to update the task without the need to be on the main application tab. The extension can be accessed at: https://github.com/vladlumfilip/Extension-To-Do. 
+
+### Content Manager
+
+This is an application that allows management to make edits to the README file of this project without interacting with the actual code base of the to do list app. The content manager is built using React (https://react.dev/) and can be accessed at: https://github.com/vladlumfilip/Content-Manager.
+
+## Credentials and Acknowledgements
 This application was created by Vlad Filip under the supervision of Ilinca Ion.

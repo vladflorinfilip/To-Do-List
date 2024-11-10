@@ -1,0 +1,31 @@
+html(lang="en")
+  include ./partials/head
+
+  body
+    include ./partials/nav
+
+    .container
+      h2 Categories
+      p Here you can manage your categories.
+
+      form(action='/addcategory' method='POST')
+        input(type="color" name="color" value="#ff0000" required)
+        input(type="text" name="new_category" placeholder="Input category name" required)
+        button(type="submit") Add Category
+
+      h3 Existing categories
+      ul
+        if categories.length > 0
+          each category in categories
+            li(style=`background-color: ${category.color}`)
+              | #{category.name}
+              form(action="/removecategory" method="POST" style="display: inline;")
+                input(type="hidden" name="categorytoRemove" value=`${category.name}_${category.color}`)
+                button(type="submit" class="remove-btn") X
+        else
+          li(style="color:#085a83;") No categories yet
+
+      form(action="/resetcategories" method="POST" style="display: inline;")
+        button(type="submit" class="reset") Reset categories
+
+    include ./partials/footer

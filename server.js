@@ -1,16 +1,18 @@
 // Import dependencies
-const express = require("express")
-const bodyParser = require("body-parser")
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require('cors');
 const { Pool } = require('pg');
 
 // Create a new express application object
 const app = express()
 app.set('view engine', 'ejs');
 
-// Define global variables for the two task lists
+// Define global variables
 var todos = [];
 var ticks = [];
 var categories = [];
+var categoryMap = {};
 
 // PostgreSQL connection pool
 const pool = new Pool({
@@ -22,15 +24,17 @@ const pool = new Pool({
 });
 
 // Middleware
-app.use("/static", express.static("static"))
-app.use(express.urlencoded({extended: true}))
+app.use("/static", express.static("static"));
+app.use(express.urlencoded({extended: true}));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
+app.use(express.json());
 
 // Immediately-Invoked Function Expression (IIFE) to ensure PosgreSQL connection at startup
 (async () => {
     try {
         // Ensure the store is initialized at the start and handle errors
-        const { todos, ticks, categories } = await initializeStore();
+        const { todos, ticks, categories, categoryMap } = await initializeStore();
     } catch (error) {
         console.error("Error during PostgreSQL client connection or store initialization:", error);
         process.exit(1); // Exit the process with failure code
@@ -44,58 +48,48 @@ async function initializeStore() {
 
         // Fetch categories from PostgreSQL
         console.log("Fetching categories from PosgreSQL...");
+        // Get categories
         const categoriesResult = await pool.query('SELECT * FROM categories');
         categories = categoriesResult.rows;
+        // Get tasks
+        const tasksResult = await pool.query('SELECT * FROM tasks');
+        tasks = tasksResult.rows;
+
+        // Create a mapping from category_id to category_name
+        categoryMap = {};
+        categories.forEach(category => {
+            categoryMap[category.id] = category.name;
+        });
 
         // Initialize todos and ticks arrays
         todos = [];
         ticks = [];
-
-        for (let category of categories) {
-            const tableName = `${category.name.toLowerCase()}_tasks`;
-            const tasksResult = await pool.query(`SELECT * FROM ${tableName}`);
-            const tasks = tasksResult.rows;
-
-            for (let task of tasks) {
-                if (!task.completed) {
-                    // Add elements to outstanding tasks list
-                    todos.push({ task: task.name, category: category.name });
-                } else {
-                    // Add elements to completed tasks list
-                    ticks.push({ task: task.name, category: category.name })
-                }
+        for (let task of tasks) {
+            const categoryName = categoryMap[task.category_id];  // Lookup category name
+            if (!task.completed) {
+                // Add elements to outstanding list
+                todos.push({task: task.name, category: categoryName})
+            } else {
+                // Add elements to completed tasks list
+                ticks.push({ task: task.name, category: categoryName})
             }
         }
-        return {todos, ticks, categories};
+        return {todos, ticks, categories, categoryMap};
         } catch (err) {
             console.error('Error initializing store:', err);
-            return { todos: [], ticks: [], categories: [] };
-    }
-}
-
-// Write/update task to PostgreSQL
-async function writeTasks(taskNAME, taskVALUE, category) {
-    try {
-        const tableName = `${category}_tasks`;
-        console.log(tableName);
-        if (taskVALUE === 1) {
-            await pool.query(`UPDATE ${tableName} SET completed = $1 WHERE name = $2`, [true, taskNAME]);
-        } else {
-            await pool.query(`INSERT INTO ${tableName} (name, completed) VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET completed = $2`, [taskNAME, false]);
-        }
-    } catch (err) {
-        console.error('Error writing tasks to PostgreSQL:', err);
+            return { todos: [], ticks: [], categories: [], categoryMap: [] };
     }
 }
 
 // ROUTES
 app.get("/to-do-list", async (req, res) => {
     try {
-        res.render("index.ejs", {
+        res.render("./pug/index.pug", {
             name: "Vlad Filip",
             todos: todos,
             ticks: ticks,
-            categories: categories
+            categories: categories,
+            categoryMap: categoryMap
         });
     } catch (err) {
         console.error("Error initializing or reading tasks:", err);
@@ -105,11 +99,12 @@ app.get("/to-do-list", async (req, res) => {
 
 app.get("/categories", async (req,res) => {
     try {
-        res.render("categories.ejs", {
+        res.render("./pug/categories.pug", {
             name: "Vlad Filip",
             todos: todos,
             ticks: ticks,
-            categories: categories
+            categories: categories,
+            categoryMap: categoryMap
         });
     } catch (err) {
         console.error("Error fetching categories:", err);
@@ -117,6 +112,26 @@ app.get("/categories", async (req,res) => {
     }
 })
 
+// APIs
+app.get("/api/outstanding-tasks", async (req, res) => {
+    try {
+        res.json(todos);
+    } catch (err) {
+        console.error("Error fetching outstanding tasks:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.get("/api/completed-tasks", async (req, res) => {
+    try {
+        res.json(ticks);
+    } catch (err) {
+        console.error("Error fetching completed tasks:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+// POST METHODS
 // Read and add task
 app.post("/addtask", async (req, res) => {
     try{ 
@@ -124,6 +139,12 @@ app.post("/addtask", async (req, res) => {
         const newTask = req.body.task;
         // Read category
         const category = req.body.category;
+        // Reverse category map
+        const reverseCategoryMap = Object.fromEntries(
+            Object.entries(categoryMap).map(([id, name]) => [name, id])
+          );
+        // Get category id
+        const categoryId = reverseCategoryMap[category];
         if (newTask && category) {
             // Check the task has not already been added
             index_todos = todos.findIndex(t => t.task === newTask && t.category == category);
@@ -134,7 +155,7 @@ app.post("/addtask", async (req, res) => {
                 // Push new todo into array
                 todos.push({ task: newTask , category: category });
                 // Write tasks in database
-                await writeTasks(newTask, 0, category);
+                await pool.query(`INSERT INTO tasks (name, category_id, completed) VALUES ($1, $2, $3)`, [newTask, categoryId ,false])
                 console.log('Added new task:', newTask);
 
             }
@@ -151,15 +172,19 @@ app.post("/ticktask", async (req, res) => {
     try {
         // Read ticked task
         const tickedTask = req.body.check;
+        console.log(tickedTask);
         if (tickedTask) {
             // Split the task name and category
             const [taskName, category] = tickedTask.split('_')
             // Remove the task from
             const taskIndex = todos.findIndex(t => t.task === taskName && t.category == category);
             if (taskIndex > -1) {
-                todos.splice(taskIndex, 1); // Delete in todos
-                ticks.push({ task: taskName, category: category }); // Push to ticks
-                await writeTasks(taskName, 1, category) // Update redis
+                // Delete in todos
+                todos.splice(taskIndex, 1);
+                // Push to ticks
+                ticks.push({ task: taskName, category: category }); 
+                // Update database
+                await pool.query(`UPDATE tasks SET completed = $1 WHERE name = $2`, [true, taskName]);
             }
             console.log('Ticked task:', taskName);
             res.redirect('/to-do-list');
@@ -179,12 +204,15 @@ app.post("/removetask", async (req,res) => {
             // Split the task name and category
             const [taskName, category] = tasktoRemove.split('_')
             const taskIndex  = ticks.findIndex(t => t.task === taskName && t.category == category);
+            console.log(taskIndex);
             if (taskIndex > -1) {
                 ticks.splice(taskIndex, 1); // Remove from ticks
-                await pool.query(`DELETE FROM ${category.toLowerCase()}_tasks WHERE name = $1`, [taskName]); // Update PostgreSQL
+                await pool.query(`DELETE FROM tasks WHERE name = $1`, [taskName]); // Update PostgreSQL
             }
-        console.log('Removed task:', taskName);
-        res.redirect('/to-do-list');
+            console.log('Removed task:', taskName);
+            res.redirect('/to-do-list');
+        } else {
+            res.status(422).send(`You haven't given me a task`);
         }
     } catch (err) {
         console.error('Error removing task:', err);
@@ -200,18 +228,24 @@ app.post("/addcategory", async (req,res) => {
         const newColor = req.body.color;
         if (newCategory && newColor) {
             // Check the category has not already been added
-            index_category = categories.findIndex(t => t.category === newCategory);
+            index_category = categories.findIndex(t => t.name === newCategory);
             if (index_category > -1) {
                 console.log("Category already exists.")
             } else {
                 // Push new todo into array
                 categories.push({ name: newCategory , color: newColor });
-                // Write category to PostgreSQL
-                await pool.query('INSERT INTO categories (name, color) VALUES ($1, $2)', [newCategory, newColor]);
-                // Create a new table for the category
-                const tableName = `${newCategory.toLowerCase()}_tasks`;
-                await pool.query(`CREATE TABLE ${tableName} (id SERIAL PRIMARY KEY, name TEXT NOT NULL, completed BOOLEAN DEFAULT FALSE)`);
-                console.log('Added new category:', newCategory);
+
+                // Write category to PostgreSQL and return the new ID
+                const result = await pool.query(
+                    'INSERT INTO categories (name, color) VALUES ($1, $2) RETURNING id',
+                    [newCategory, newColor]
+                );
+
+                // Get ID
+                const newCategoryId = result.rows[0].id;
+
+                // Add the new category to the object
+                categoryMap[newCategoryId] = newCategory;
             }
         }
         res.redirect("/categories");
@@ -249,9 +283,6 @@ app.post("/removecategory", async (req,res) => {
             }
             // Remove category from PostgreSQL
             await pool.query('DELETE FROM categories WHERE name = $1', [nameCategory]);
-            // Drop the table for the category
-            const tableName = `${nameCategory.toLowerCase()}_tasks`;
-            await pool.query(`DROP TABLE IF EXISTS ${tableName}`);;
         }
         res.redirect("/categories");
     } catch (err) {
